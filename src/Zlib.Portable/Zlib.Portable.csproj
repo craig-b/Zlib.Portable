@@ -3,6 +3,15 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <nullable>enable</nullable>
+    <PackageId>Zlib.Portable.Core</PackageId>
+    <Authors />
+    <Company />
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/craig-b/Zlib.Portable</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>zip gzip deflate dotnetzip bzip2 lzma portable compression</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>A Zlib library for .net core 3 that uses ArrayPool&lt;T&gt; for reduced memory traffic</Description>
   </PropertyGroup>
 
   <ItemGroup>
