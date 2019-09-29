@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using NUnit.Framework;
 using System.IO;
 using Ionic.Zlib;
@@ -19,7 +16,7 @@ namespace ZlibTest
         [Test]
         public void IonicGzipStreamWithBadTrailer_DoesNotThrowWhenNotReadToEnd()
         {
-            Verify_StreamWithBadTrailer_DoesNotThrow_WhenNotReadToEnd(ms => new Ionic.Zlib.GZipStream(ms, Ionic.Zlib.CompressionMode.Decompress));
+            Verify_StreamWithBadTrailer_DoesNotThrow_WhenNotReadToEnd(ms => new GZipStream(ms, CompressionMode.Decompress));
         }
 
 
@@ -47,10 +44,10 @@ namespace ZlibTest
         [Test]
         public void IonicGzipStreamWithBadTrailer_DoesNotThrowWhenReadToEnd()
         {
-            Verify_StreamWithBadTrailer_DoesNotThrow_WhenReadToEnd(ms => new Ionic.Zlib.GZipStream(ms, Ionic.Zlib.CompressionMode.Decompress));
+            Verify_StreamWithBadTrailer_DoesNotThrow_WhenReadToEnd(ms => new GZipStream(ms, CompressionMode.Decompress));
         }
 
-        
+
         void Verify_StreamWithBadTrailer_DoesNotThrow_WhenReadToEnd(Func<Stream, Stream> buildGzip)
         {
             byte[] data = BuildTestData();
@@ -73,7 +70,7 @@ namespace ZlibTest
             var data = default(byte[]);
             using (var ms = new MemoryStream())
             {
-                using (var writer = new BinaryWriter(new Ionic.Zlib.GZipStream(ms, Ionic.Zlib.CompressionMode.Compress)))
+                using (var writer = new BinaryWriter(new GZipStream(ms, CompressionMode.Compress)))
                 {
                     writer.Write(123);
                     writer.Write("Some string we're never gonna read");

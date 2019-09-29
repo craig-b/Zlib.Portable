@@ -24,8 +24,8 @@
 //
 // ------------------------------------------------------------------
 
-
 using System;
+using System.IO;
 
 namespace Ionic.Zlib
 {
@@ -38,7 +38,7 @@ namespace Ionic.Zlib
     /// <para>
     ///   The DeflateStream is a <see
     ///   href="http://en.wikipedia.org/wiki/Decorator_pattern">Decorator</see> on a <see
-    ///   cref="System.IO.Stream"/>.  It adds DEFLATE compression or decompression to any
+    ///   cref="Stream"/>.  It adds DEFLATE compression or decompression to any
     ///   stream.
     /// </para>
     ///
@@ -63,11 +63,11 @@ namespace Ionic.Zlib
     ///
     /// <seealso cref="ZlibStream" />
     /// <seealso cref="GZipStream" />
-    public class DeflateStream : System.IO.Stream
+    public class DeflateStream : Stream
     {
         internal ZlibBaseStream _baseStream;
-        internal System.IO.Stream _innerStream;
-        bool _disposed;
+        //internal Stream _innerStream;
+        private bool _disposed;
 
         /// <summary>
         ///   Create a DeflateStream using the specified CompressionMode.
@@ -119,7 +119,7 @@ namespace Ionic.Zlib
         /// </example>
         /// <param name="stream">The stream which will be read or written.</param>
         /// <param name="mode">Indicates whether the DeflateStream will compress or decompress.</param>
-        public DeflateStream(System.IO.Stream stream, CompressionMode mode)
+        public DeflateStream(Stream stream, CompressionMode mode)
             : this(stream, mode, CompressionLevel.Default, false)
         {
         }
@@ -185,7 +185,7 @@ namespace Ionic.Zlib
         /// <param name="stream">The stream to be read or written while deflating or inflating.</param>
         /// <param name="mode">Indicates whether the <c>DeflateStream</c> will compress or decompress.</param>
         /// <param name="level">A tuning knob to trade speed for effectiveness.</param>
-        public DeflateStream(System.IO.Stream stream, CompressionMode mode, CompressionLevel level)
+        public DeflateStream(Stream stream, CompressionMode mode, CompressionLevel level)
             : this(stream, mode, level, false)
         {
         }
@@ -227,7 +227,7 @@ namespace Ionic.Zlib
         ///
         /// <param name="leaveOpen">true if the application would like the stream to
         /// remain open after inflation/deflation.</param>
-        public DeflateStream(System.IO.Stream stream, CompressionMode mode, bool leaveOpen)
+        public DeflateStream(Stream stream, CompressionMode mode, bool leaveOpen)
             : this(stream, mode, CompressionLevel.Default, leaveOpen)
         {
         }
@@ -249,7 +249,7 @@ namespace Ionic.Zlib
         ///   remain open after the deflation or inflation occurs.  By default, after
         ///   <c>Close()</c> is called on the stream, the captive stream is also
         ///   closed. In some cases this is not desired, for example if the stream is a
-        ///   <see cref="System.IO.MemoryStream"/> that will be re-read after
+        ///   <see cref="MemoryStream"/> that will be re-read after
         ///   compression.  Specify true for the <paramref name="leaveOpen"/> parameter
         ///   to leave the stream open.
         /// </para>
@@ -302,11 +302,11 @@ namespace Ionic.Zlib
         /// </example>
         /// <param name="stream">The stream which will be read or written.</param>
         /// <param name="mode">Indicates whether the DeflateStream will compress or decompress.</param>
-        /// <param name="leaveOpen">true if the application would like the stream to remain open after inflation/deflation.</param>
         /// <param name="level">A tuning knob to trade speed for effectiveness.</param>
-        public DeflateStream(System.IO.Stream stream, CompressionMode mode, CompressionLevel level, bool leaveOpen)
+        /// <param name="leaveOpen">true if the application would like the stream to remain open after inflation/deflation.</param>
+        public DeflateStream(Stream stream, CompressionMode mode, CompressionLevel level, bool leaveOpen)
         {
-            _innerStream = stream;
+            //_innerStream = stream;
             _baseStream = new ZlibBaseStream(stream, mode, level, ZlibStreamFlavor.DEFLATE, leaveOpen);
         }
 
@@ -319,11 +319,11 @@ namespace Ionic.Zlib
         /// </remarks>
         virtual public FlushType FlushMode
         {
-            get { return (this._baseStream._flushMode); }
+            get => _baseStream._flushMode;
             set
             {
                 if (_disposed) throw new ObjectDisposedException("DeflateStream");
-                this._baseStream._flushMode = value;
+                _baseStream._flushMode = value;
             }
         }
 
@@ -344,20 +344,19 @@ namespace Ionic.Zlib
         ///   stream. If you try to set it afterwards, it will throw.
         /// </para>
         /// </remarks>
+        /// <exception cref="ZlibException"></exception>
+        /// <exception cref="ObjectDisposedException"></exception>
         public int BufferSize
         {
-            get
-            {
-                return this._baseStream._bufferSize;
-            }
+            get => _baseStream._bufferSize;
             set
             {
                 if (_disposed) throw new ObjectDisposedException("DeflateStream");
-                if (this._baseStream._workingBuffer != null)
+                if (_baseStream._workingBuffer != null)
                     throw new ZlibException("The working buffer is already set.");
                 if (value < ZlibConstants.WorkingBufferSizeMin)
-                    throw new ZlibException(String.Format("Don't be silly. {0} bytes?? Use a bigger buffer, at least {1}.", value, ZlibConstants.WorkingBufferSizeMin));
-                this._baseStream._bufferSize = value;
+                    throw new ZlibException($"Don't be silly. {value} bytes?? Use a bigger buffer, at least {ZlibConstants.WorkingBufferSizeMin}.");
+                _baseStream._bufferSize = value;
             }
         }
 
@@ -371,34 +370,19 @@ namespace Ionic.Zlib
         /// </remarks>
         public CompressionStrategy Strategy
         {
-            get
-            {
-                return this._baseStream.Strategy;
-            }
+            get => _baseStream.Strategy;
             set
             {
-            if (_disposed) throw new ObjectDisposedException("DeflateStream");
-                this._baseStream.Strategy = value;
+                if (_disposed) throw new ObjectDisposedException("DeflateStream");
+                _baseStream.Strategy = value;
             }
         }
 
         /// <summary> Returns the total number of bytes input so far.</summary>
-        virtual public long TotalIn
-        {
-            get
-            {
-                return this._baseStream._z.TotalBytesIn;
-            }
-        }
+        virtual public long TotalIn => _baseStream._zlibCodec?.TotalBytesIn ?? 0;
 
         /// <summary> Returns the total number of bytes output so far.</summary>
-        virtual public long TotalOut
-        {
-            get
-            {
-                return this._baseStream._z.TotalBytesOut;
-            }
-        }
+        virtual public long TotalOut => _baseStream._zlibCodec?.TotalBytesOut ?? 0;
 
         #endregion
 
@@ -433,8 +417,8 @@ namespace Ionic.Zlib
             {
                 if (!_disposed)
                 {
-                    if (disposing && (this._baseStream != null))
-                        this._baseStream.Close();
+                    if (disposing)
+                        _baseStream?.Close();
                     _disposed = true;
                 }
             }
@@ -443,8 +427,6 @@ namespace Ionic.Zlib
                 base.Dispose(disposing);
             }
         }
-
-
 
         /// <summary>
         /// Indicates whether the stream can be read.
@@ -457,7 +439,7 @@ namespace Ionic.Zlib
             get
             {
                 if (_disposed) throw new ObjectDisposedException("DeflateStream");
-                return _baseStream._stream.CanRead;
+                return _baseStream._stream?.CanRead ?? false;
             }
         }
 
@@ -467,11 +449,7 @@ namespace Ionic.Zlib
         /// <remarks>
         /// Always returns false.
         /// </remarks>
-        public override bool CanSeek
-        {
-            get { return false; }
-        }
-
+        public override bool CanSeek => false;
 
         /// <summary>
         /// Indicates whether the stream can be written.
@@ -484,7 +462,7 @@ namespace Ionic.Zlib
             get
             {
                 if (_disposed) throw new ObjectDisposedException("DeflateStream");
-                return _baseStream._stream.CanWrite;
+                return _baseStream._stream?.CanWrite ?? false;
             }
         }
 
@@ -500,10 +478,8 @@ namespace Ionic.Zlib
         /// <summary>
         /// Reading this property always throws a <see cref="NotImplementedException"/>.
         /// </summary>
-        public override long Length
-        {
-            get { throw new NotImplementedException(); }
-        }
+        /// <exception cref="NotImplementedException"></exception>
+        public override long Length => throw new NotImplementedException();
 
         /// <summary>
         /// The position of the stream pointer.
@@ -516,17 +492,18 @@ namespace Ionic.Zlib
         ///   reading.  The count may refer to compressed bytes or uncompressed bytes,
         ///   depending on how you've used the stream.
         /// </remarks>
+        /// <exception cref="NotImplementedException"></exception>
         public override long Position
         {
             get
             {
-                if (this._baseStream._streamMode == Ionic.Zlib.ZlibBaseStream.StreamMode.Writer)
-                    return this._baseStream._z.TotalBytesOut;
-                if (this._baseStream._streamMode == Ionic.Zlib.ZlibBaseStream.StreamMode.Reader)
-                    return this._baseStream._z.TotalBytesIn;
+                if (_baseStream._streamMode == ZlibBaseStream.StreamMode.Writer)
+                    return _baseStream._zlibCodec?.TotalBytesOut ?? 0;
+                if (_baseStream._streamMode == ZlibBaseStream.StreamMode.Reader)
+                    return _baseStream._zlibCodec?.TotalBytesIn ?? 0;
                 return 0;
             }
-            set { throw new NotImplementedException(); }
+            set => throw new NotImplementedException();
         }
 
         /// <summary>
@@ -561,26 +538,21 @@ namespace Ionic.Zlib
             return _baseStream.Read(buffer, offset, count);
         }
 
-
         /// <summary>
         /// Calling this method always throws a <see cref="NotImplementedException"/>.
         /// </summary>
         /// <param name="offset">this is irrelevant, since it will always throw!</param>
         /// <param name="origin">this is irrelevant, since it will always throw!</param>
         /// <returns>irrelevant!</returns>
-        public override long Seek(long offset, System.IO.SeekOrigin origin)
-        {
-            throw new NotImplementedException();
-        }
+        /// <exception cref="NotImplementedException"></exception>
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotImplementedException();
 
         /// <summary>
         /// Calling this method always throws a <see cref="NotImplementedException"/>.
         /// </summary>
         /// <param name="value">this is irrelevant, since it will always throw!</param>
-        public override void SetLength(long value)
-        {
-            throw new NotImplementedException();
-        }
+        /// <exception cref="NotImplementedException"></exception>
+        public override void SetLength(long value) => throw new NotImplementedException();
 
         /// <summary>
         ///   Write data to the stream.
@@ -618,19 +590,16 @@ namespace Ionic.Zlib
         }
         #endregion
 
-
-
-
         /// <summary>
         ///   Compress a string into a byte array using DEFLATE (RFC 1951).
         /// </summary>
         ///
         /// <remarks>
-        ///   Uncompress it with <see cref="DeflateStream.UncompressString(byte[])"/>.
+        ///   Uncompress it with <see cref="UncompressString(byte[])"/>.
         /// </remarks>
         ///
-        /// <seealso cref="DeflateStream.UncompressString(byte[])">DeflateStream.UncompressString(byte[])</seealso>
-        /// <seealso cref="DeflateStream.CompressBuffer(byte[])">DeflateStream.CompressBuffer(byte[])</seealso>
+        /// <seealso cref="UncompressString(byte[])">DeflateStream.UncompressString(byte[])</seealso>
+        /// <seealso cref="CompressBuffer(byte[])">DeflateStream.CompressBuffer(byte[])</seealso>
         /// <seealso cref="GZipStream.CompressString(string)">GZipStream.CompressString(string)</seealso>
         /// <seealso cref="ZlibStream.CompressString(string)">ZlibStream.CompressString(string)</seealso>
         ///
@@ -640,28 +609,24 @@ namespace Ionic.Zlib
         /// </param>
         ///
         /// <returns>The string in compressed form</returns>
-        public static byte[] CompressString(String s)
+        public static byte[] CompressString(string s)
         {
-            using (var ms = new System.IO.MemoryStream())
-            {
-                System.IO.Stream compressor =
-                    new DeflateStream(ms, CompressionMode.Compress, CompressionLevel.BestCompression);
-                ZlibBaseStream.CompressString(s, compressor);
-                return ms.ToArray();
-            }
+            using var ms = new MemoryStream();
+            Stream compressor = new DeflateStream(ms, CompressionMode.Compress, CompressionLevel.BestCompression);
+            ZlibBaseStream.CompressString(s, compressor);
+            return ms.ToArray();
         }
-
 
         /// <summary>
         ///   Compress a byte array into a new byte array using DEFLATE.
         /// </summary>
         ///
         /// <remarks>
-        ///   Uncompress it with <see cref="DeflateStream.UncompressBuffer(byte[])"/>.
+        ///   Uncompress it with <see cref="UncompressBuffer(byte[])"/>.
         /// </remarks>
         ///
-        /// <seealso cref="DeflateStream.CompressString(string)">DeflateStream.CompressString(string)</seealso>
-        /// <seealso cref="DeflateStream.UncompressBuffer(byte[])">DeflateStream.UncompressBuffer(byte[])</seealso>
+        /// <seealso cref="CompressString(string)">DeflateStream.CompressString(string)</seealso>
+        /// <seealso cref="UncompressBuffer(byte[])">DeflateStream.UncompressBuffer(byte[])</seealso>
         /// <seealso cref="GZipStream.CompressBuffer(byte[])">GZipStream.CompressBuffer(byte[])</seealso>
         /// <seealso cref="ZlibStream.CompressBuffer(byte[])">ZlibStream.CompressBuffer(byte[])</seealso>
         ///
@@ -672,23 +637,18 @@ namespace Ionic.Zlib
         /// <returns>The data in compressed form</returns>
         public static byte[] CompressBuffer(byte[] b)
         {
-            using (var ms = new System.IO.MemoryStream())
-            {
-                System.IO.Stream compressor =
-                    new DeflateStream( ms, CompressionMode.Compress, CompressionLevel.BestCompression );
-
-                ZlibBaseStream.CompressBuffer(b, compressor);
-                return ms.ToArray();
-            }
+            using var ms = new MemoryStream();
+            Stream compressor = new DeflateStream(ms, CompressionMode.Compress, CompressionLevel.BestCompression);
+            ZlibBaseStream.CompressBuffer(b, compressor);
+            return ms.ToArray();
         }
-
 
         /// <summary>
         ///   Uncompress a DEFLATE'd byte array into a single string.
         /// </summary>
         ///
-        /// <seealso cref="DeflateStream.CompressString(String)">DeflateStream.CompressString(String)</seealso>
-        /// <seealso cref="DeflateStream.UncompressBuffer(byte[])">DeflateStream.UncompressBuffer(byte[])</seealso>
+        /// <seealso cref="CompressString(string)">DeflateStream.CompressString(String)</seealso>
+        /// <seealso cref="UncompressBuffer(byte[])">DeflateStream.UncompressBuffer(byte[])</seealso>
         /// <seealso cref="GZipStream.UncompressString(byte[])">GZipStream.UncompressString(byte[])</seealso>
         /// <seealso cref="ZlibStream.UncompressString(byte[])">ZlibStream.UncompressString(byte[])</seealso>
         ///
@@ -697,24 +657,19 @@ namespace Ionic.Zlib
         /// </param>
         ///
         /// <returns>The uncompressed string</returns>
-        public static String UncompressString(byte[] compressed)
+        public static string UncompressString(byte[] compressed)
         {
-            using (var input = new System.IO.MemoryStream(compressed))
-            {
-                System.IO.Stream decompressor =
-                    new DeflateStream(input, CompressionMode.Decompress);
-
-                return ZlibBaseStream.UncompressString(compressed, decompressor);
-            }
+            using var input = new MemoryStream(compressed);
+            Stream decompressor = new DeflateStream(input, CompressionMode.Decompress);
+            return ZlibBaseStream.UncompressString(compressed, decompressor);
         }
-
 
         /// <summary>
         ///   Uncompress a DEFLATE'd byte array into a byte array.
         /// </summary>
         ///
-        /// <seealso cref="DeflateStream.CompressBuffer(byte[])">DeflateStream.CompressBuffer(byte[])</seealso>
-        /// <seealso cref="DeflateStream.UncompressString(byte[])">DeflateStream.UncompressString(byte[])</seealso>
+        /// <seealso cref="CompressBuffer(byte[])">DeflateStream.CompressBuffer(byte[])</seealso>
+        /// <seealso cref="UncompressString(byte[])">DeflateStream.UncompressString(byte[])</seealso>
         /// <seealso cref="GZipStream.UncompressBuffer(byte[])">GZipStream.UncompressBuffer(byte[])</seealso>
         /// <seealso cref="ZlibStream.UncompressBuffer(byte[])">ZlibStream.UncompressBuffer(byte[])</seealso>
         ///
@@ -725,16 +680,10 @@ namespace Ionic.Zlib
         /// <returns>The data in uncompressed form</returns>
         public static byte[] UncompressBuffer(byte[] compressed)
         {
-            using (var input = new System.IO.MemoryStream(compressed))
-            {
-                System.IO.Stream decompressor =
-                    new DeflateStream( input, CompressionMode.Decompress );
-
-                return ZlibBaseStream.UncompressBuffer(compressed, decompressor);
-            }
+            using var input = new MemoryStream(compressed);
+            Stream decompressor = new DeflateStream(input, CompressionMode.Decompress);
+            return ZlibBaseStream.UncompressBuffer(compressed, decompressor);
         }
-
     }
-
 }
 

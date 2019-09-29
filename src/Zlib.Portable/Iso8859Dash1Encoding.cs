@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Ionic.Encoding
 {
@@ -9,7 +7,7 @@ namespace Ionic.Encoding
     /// for platforms that do not support it, for example on Silverlight or some
     /// Compact Framework platforms.
     /// </summary>
-    public class Iso8859Dash1Encoding : System.Text.Encoding
+    internal class Iso8859Dash1Encoding : System.Text.Encoding
     {
         /// <summary>
         /// Gets the name registered with the
@@ -18,10 +16,7 @@ namespace Ionic.Encoding
         /// <returns>
         /// Always returns "iso-8859-1".
         /// </returns>
-        public override string WebName
-        {
-            get { return "iso-8859-1"; }
-        }
+        public override string WebName { get; } = "iso-8859-1";
 
         /// <summary>
         /// Encodes a set of characters from a character array into
@@ -36,24 +31,26 @@ namespace Ionic.Encoding
         /// </param><param name="bytes">The byte array to contain the resulting sequence of bytes.
         /// </param><param name="byteIndex">The index at which to start writing the resulting sequence of bytes.
         /// </param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        /// <exception cref="ArgumentNullException"><paramref name="chars"/> is <c>null</c>.</exception>
         public override int GetBytes(char[] chars, int start, int count, byte[] bytes, int byteIndex)
         {
             if (chars == null)
-                throw new ArgumentNullException("chars", "null array");
+                throw new ArgumentNullException(nameof(chars), "null array");
 
             if (bytes == null)
-                throw new ArgumentNullException("bytes", "null array");
+                throw new ArgumentNullException(nameof(bytes), "null array");
 
             if (start < 0)
-                throw new ArgumentOutOfRangeException("start");
+                throw new ArgumentOutOfRangeException(nameof(start));
             if (count < 0)
-                throw new ArgumentOutOfRangeException("charCount");
+                throw new ArgumentOutOfRangeException(nameof(count));
 
             if ((chars.Length - start) < count)
-                throw new ArgumentOutOfRangeException("chars");
+                throw new ArgumentOutOfRangeException(nameof(chars));
 
             if ((byteIndex < 0) || (byteIndex > bytes.Length))
-                throw new ArgumentOutOfRangeException("byteIndex");
+                throw new ArgumentOutOfRangeException(nameof(byteIndex));
 
             // iso-8859-1 is special in that it was adopted as the first page of
             // UCS - ISO's Universal Coding Standard, described in ISO 10646,
@@ -61,18 +58,17 @@ namespace Ionic.Encoding
             // character in the range of 0 to FF maps to the iso-8859-1 character
             // with the same value. Because of that the encoding and decoding is
             // trivial.
-            for (int i=0; i < count; i++)
+            for (int i = 0; i < count; i++)
             {
-                char c = chars[start+i]; // get the unicode char
+                char c = chars[start + i]; // get the unicode char
 
                 if (c >= '\x00FF') // out of range?
-                    bytes[byteIndex+i] = (byte) '?';
+                    bytes[byteIndex + i] = (byte)'?';
                 else
-                    bytes[byteIndex+i] = (byte) c;
+                    bytes[byteIndex + i] = (byte)c;
             }
             return count;
         }
-
 
         /// <summary>
         /// Decodes a sequence of bytes from the specified byte array into the specified character array.
@@ -86,33 +82,34 @@ namespace Ionic.Encoding
         /// </param><param name="chars">The character array to contain the resulting set of characters.
         /// </param><param name="charIndex">The index at which to start writing the resulting set of characters.
         /// </param>
+        /// <exception cref="ArgumentNullException"><paramref name="bytes"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         public override int GetChars(byte[] bytes, int start, int count, char[] chars, int charIndex)
         {
             if (chars == null)
-                throw new ArgumentNullException("chars", "null array");
+                throw new ArgumentNullException(nameof(chars), "null array");
 
             if (bytes == null)
-                throw new ArgumentNullException("bytes", "null array");
+                throw new ArgumentNullException(nameof(bytes), "null array");
 
             if (start < 0)
-                throw new ArgumentOutOfRangeException("start");
+                throw new ArgumentOutOfRangeException(nameof(start));
             if (count < 0)
-                throw new ArgumentOutOfRangeException("charCount");
+                throw new ArgumentOutOfRangeException(nameof(count));
 
             if ((bytes.Length - start) < count)
-                throw new ArgumentOutOfRangeException("bytes");
+                throw new ArgumentOutOfRangeException(nameof(bytes));
 
             if ((charIndex < 0) || (charIndex > chars.Length))
-                throw new ArgumentOutOfRangeException("charIndex");
+                throw new ArgumentOutOfRangeException(nameof(charIndex));
 
             // In the range 00 to FF, the Unicode characters are the same as the
             // iso-8859-1 characters; because of that, decoding is trivial.
             for (int i = 0; i < count; i++)
-                chars[charIndex + i] = (char) bytes[i + start];
+                chars[charIndex + i] = (char)bytes[i + start];
 
             return count;
         }
-
 
         /// <summary>
         /// Calculates the number of bytes produced by encoding a set of characters
@@ -122,11 +119,7 @@ namespace Ionic.Encoding
         /// The number of bytes produced by encoding the specified characters. This class
         /// alwas returns the value of <paramref name="count"/>.
         /// </returns>
-        public override int GetByteCount(char[] chars, int index, int count)
-        {
-            return count;
-        }
-
+        public override int GetByteCount(char[] chars, int index, int count) => count;
 
         /// <summary>
         /// Calculates the number of characters produced by decoding a sequence
@@ -136,11 +129,7 @@ namespace Ionic.Encoding
         /// The number of characters produced by decoding the specified sequence of bytes. This class
         /// alwas returns the value of <paramref name="count"/>.
         /// </returns>
-        public override int GetCharCount(byte[] bytes, int index, int count)
-        {
-            return count;
-        }
-
+        public override int GetCharCount(byte[] bytes, int index, int count) => count;
 
         /// <summary>
         /// Calculates the maximum number of bytes produced by encoding the specified number of characters.
@@ -151,10 +140,7 @@ namespace Ionic.Encoding
         /// </returns>
         /// <param name="charCount">The number of characters to encode.
         /// </param>
-        public override int GetMaxByteCount(int charCount)
-        {
-            return charCount;
-        }
+        public override int GetMaxByteCount(int charCount) => charCount;
 
         /// <summary>
         /// Calculates the maximum number of characters produced by decoding the specified number of bytes.
@@ -164,20 +150,13 @@ namespace Ionic.Encoding
         /// alwas returns the value of <paramref name="byteCount"/>.
         /// </returns>
         /// <param name="byteCount">The number of bytes to decode.</param>
-        public override int GetMaxCharCount(int byteCount)
-        {
-            return byteCount;
-        }
+        public override int GetMaxCharCount(int byteCount) => byteCount;
 
         /// <summary>
         /// Gets the number of characters that are supported by this encoding.
         /// This property returns a maximum value of 256, as the encoding class
         /// only supports single byte encodings (1 byte == 256 possible values).
         /// </summary>
-        public static int CharacterCount
-        {
-            get { return 256; }
-        }
-
+        public static int CharacterCount { get; } = 256;
     }
 }
