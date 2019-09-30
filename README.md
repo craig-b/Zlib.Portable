@@ -1,4 +1,6 @@
-[Zlib.Portable 1.9.2](http://github.com/AdvancedREI/Zlib.Portable)
+[![NuGet](https://img.shields.io/nuget/v/Zlib.Portable.Core "Download from NuGet")](https://www.nuget.org/packages/Zlib.Portable.Core)
+
+#Zlib.Portable
 =================
 
 Zlib.Portable is a Portable Class Library port of the Zlib library from the popular [DotNetZip project](http://dotnetzip.codeplex.com). The code is currently being submitted back to that project, but is mirrored here for reference.
